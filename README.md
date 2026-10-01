@@ -288,6 +288,39 @@ curl http://localhost:8080/projects/1
 
 `APP_DEBUG` is `true` in `.env` so local errors are visible. Set it to `false` if this app is reachable by anyone other than you. That keeps stack traces out of responses.
 
+## Deploy a test site on Render
+
+Local Docker Compose stays the same. Render cannot start that Compose file, because Render runs one container. `docker/render/Dockerfile` is a second image for Render only. It puts Nginx and PHP in one container, builds the Vue files, and listens on the port Render assigns.
+
+On the Render create screen:
+
+| Field | Value |
+| --- | --- |
+| Language | Docker |
+| Branch | `main` |
+| Region | Singapore, or another region close to the database |
+| Root Directory | leave blank |
+| Dockerfile Path | `docker/render/Dockerfile` |
+| Build Command | leave blank |
+| Start Command | leave blank |
+
+Render does not include MySQL. Create a MySQL database somewhere the service can reach, then add these environment variables on the Render service before the first deploy:
+
+| Variable | Value |
+| --- | --- |
+| `APP_KEY` | A Laravel key. On your computer run `php artisan key:generate --show` and paste the result. |
+| `APP_URL` | The Render URL, such as `https://taskmanagement.onrender.com` |
+| `APP_DEBUG` | `false` |
+| `DB_HOST` | The MySQL hostname |
+| `DB_PORT` | `3306`, unless the database provider says otherwise |
+| `DB_DATABASE` | The database name |
+| `DB_USERNAME` | The database user |
+| `DB_PASSWORD` | The database password |
+
+The first boot creates the tables and loads the 12 sample projects. Later boots keep the rows already stored.
+
+Push `docker/render/Dockerfile` to `main` before Render builds. Render can only see files that are on GitHub.
+
 ## Where the code lives
 
 - `app/Http/Requests/Project` validates input.
